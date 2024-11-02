@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
-import httpServer from './server/httpServer';
-import './server/wsServer';
+import httpServer from './http_server/index';
+import './websocket/index';
 
 config();
 
