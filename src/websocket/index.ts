@@ -1,12 +1,18 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { handleUserMessage, activeUsers } from '../user/userHandler';
+import { activeUsers, handleUserMessage } from '../user/userHandler';
+import { handleRoomMessage } from '../room/roomHandler';
 
 const WS_PORT = process.env.WS_PORT || 3000;
 const wsServer = new WebSocketServer({ port: Number(WS_PORT) });
 
 wsServer.on('connection', (ws: WebSocket) => {
   ws.on('message', (message: string) => {
-    handleUserMessage(ws, message);
+    const request = JSON.parse(message);
+    if (request.type === 'create_room' || request.type === 'add_user_to_room') {
+      handleRoomMessage(ws, message);
+    } else {
+      handleUserMessage(ws, message);
+    }
   });
 
   ws.on('close', () => {
