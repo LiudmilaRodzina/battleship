@@ -1,16 +1,40 @@
-# dependencies
+# Node modules
 /node_modules
+
+# Build output
+dist/
+build/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
 
 # System Files
 .DS_Store
 Thumbs.db
 [Dd]esktop.ini
 
-# Links
+# IDE files
 *.lnk
 .idea/
-*.PEM
 .vscode/
 
 # Logs
 npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Operating System specific files
+*~
+*.swp
+
+# Coverage directory
+coverage/
