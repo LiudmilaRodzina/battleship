@@ -43,6 +43,11 @@ function handleAttack(_: WebSocket, request: any) {
 
     broadcastAttackResult(room, position, status);
 
+    if (checkAllShipsSunk(targetPlayer.ships)) {
+      finishGame(room, currentPlayer.id);
+      return;
+    }
+
     if (status === 'miss') {
       room.currentPlayerIndex =
         (room.currentPlayerIndex + 1) % room.players.length;
@@ -59,6 +64,7 @@ function checkHit(ships: any[], position: { x: number; y: number }): boolean {
     if (Array.isArray(ship.position)) {
       for (const pos of ship.position) {
         if (pos.x === position.x && pos.y === position.y) {
+          pos.hit = true;
           return true;
         }
       }
@@ -67,6 +73,10 @@ function checkHit(ships: any[], position: { x: number; y: number }): boolean {
     }
   }
   return false;
+}
+
+function checkAllShipsSunk(ships: any[]): boolean {
+  return ships.every((ship) => ship.position.every((pos: any) => pos.hit));
 }
 
 function broadcastAttackResult(
@@ -158,6 +168,12 @@ function handleRandomAttack(ws: WebSocket, request: any) {
   let status = isHit ? 'shot' : 'miss';
 
   broadcastAttackResult(room, position, status);
+
+  if (checkAllShipsSunk(targetPlayer.ships)) {
+    finishGame(room, currentPlayer.id);
+    return;
+  }
+
   broadcastTurn(room);
 }
 
@@ -185,6 +201,23 @@ function updateWinner(_: WebSocket, request: any) {
           type: 'winner_update',
           data: JSON.stringify({ winnerId }),
           id: request.id,
+        })
+      );
+    }
+  });
+}
+
+function finishGame(room: any, winnerId: string) {
+  room.players.forEach((player: { name: string | undefined }) => {
+    const wsPlayer = [...activeUsers.keys()].find(
+      (key) => activeUsers.get(key) === player.name
+    );
+    if (wsPlayer) {
+      wsPlayer.send(
+        JSON.stringify({
+          type: 'finish',
+          data: JSON.stringify({ winPlayer: winnerId }),
+          id: 0,
         })
       );
     }
