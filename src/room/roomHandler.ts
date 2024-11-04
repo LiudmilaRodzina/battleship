@@ -3,7 +3,7 @@ import { activeUsers } from '../user/userHandler';
 import { Room } from '../interfaces/interfaces';
 import { generateUniqueId } from '../utils/helpers';
 
-const rooms: Map<string, Room> = new Map();
+export const rooms: Map<string, Room> = new Map();
 
 export function handleRoomMessage(ws: WebSocket, message: string) {
   const request = JSON.parse(message);
@@ -31,6 +31,7 @@ function createRoom(ws: WebSocket, request: any) {
   const room: Room = {
     roomId,
     players: [{ name: playerName, id: generateUniqueId(), ships: [] }],
+    currentPlayerIndex: 0,
   };
   rooms.set(roomId, room);
 

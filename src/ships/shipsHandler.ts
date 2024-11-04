@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { getRoom } from '../room/roomHandler';
 import { activeUsers } from '../user/userHandler';
-import { Player } from '../interfaces/interfaces';
+import { Player, Ship } from '../interfaces/interfaces';
 
 export function handleShipsMessage(ws: WebSocket, message: string) {
   const request = JSON.parse(message);
@@ -15,7 +15,7 @@ export function handleShipsMessage(ws: WebSocket, message: string) {
   }
 }
 
-function addShips(_: WebSocket, request: any) {
+function addShips(ws: WebSocket, request: any) {
   const { gameId, ships, indexPlayer } = JSON.parse(request.data);
   const room = getRoom(gameId);
 
@@ -34,7 +34,16 @@ function addShips(_: WebSocket, request: any) {
   }
 
   const player = room.players[playerIndex] as Player;
-  player.ships = ships;
+  player.ships = ships.map((ship: any) => {
+    const positions = Array(ship.length)
+      .fill(null)
+      .map((_, i) => {
+        return ship.direction
+          ? { x: ship.position.x, y: ship.position.y + i }
+          : { x: ship.position.x + i, y: ship.position.y };
+      });
+    return { ...ship, position: positions };
+  });
 
   const turnMessage = {
     type: 'turn',
@@ -63,10 +72,16 @@ function addShips(_: WebSocket, request: any) {
 
 function startGame(room: any) {
   room.players.forEach((player: Player) => {
+    const shipsData = player.ships.map((ship) => ({
+      length: ship.length,
+      direction: ship.direction,
+      position: ship.position.map((pos) => ({ x: pos.x, y: pos.y })),
+    }));
+
     const startGameMessage = {
       type: 'start_game',
       data: JSON.stringify({
-        ships: player.ships,
+        ships: shipsData,
         currentPlayerIndex: player.id,
       }),
       id: 0,

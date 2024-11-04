@@ -3,15 +3,17 @@ export interface User {
   password: string;
 }
 
-interface Position {
+export interface Position {
   x: number;
   y: number;
 }
 
-interface Ship {
+export interface Ship {
   type: string;
   size: number;
   position: Position[];
+  direction: boolean;
+  length: number;
 }
 
 export interface Player {
@@ -23,4 +25,5 @@ export interface Player {
 export interface Room {
   roomId: string;
   players: Player[];
+  currentPlayerIndex: number;
 }
