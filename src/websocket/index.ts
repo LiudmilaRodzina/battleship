@@ -24,7 +24,7 @@ wsServer.on('connection', (ws: WebSocket) => {
         handleShipsMessage(ws, message);
         break;
       case 'attack':
-      case 'random_attack':
+      case 'randomAttack':
       case 'update_winner':
       case 'finish_game':
         handleGameMessage(ws, message);

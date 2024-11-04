@@ -9,7 +9,7 @@ export function handleGameMessage(ws: WebSocket, message: string) {
     case 'attack':
       handleAttack(ws, request);
       break;
-    case 'random_attack':
+    case 'randomAttack':
       handleRandomAttack(ws, request);
       break;
     case 'update_winner':
@@ -73,10 +73,6 @@ function checkHit(ships: any[], position: { x: number; y: number }): boolean {
     }
   }
   return false;
-}
-
-function checkAllShipsSunk(ships: any[]): boolean {
-  return ships.every((ship) => ship.position.every((pos: any) => pos.hit));
 }
 
 function broadcastAttackResult(
@@ -145,36 +141,47 @@ function broadcastTurn(room: any) {
 }
 
 function handleRandomAttack(ws: WebSocket, request: any) {
-  const { gameId, indexPlayer } = JSON.parse(request.data);
-  const room = getRoom(gameId);
-  if (!room) {
-    console.error(`Room not found for gameId: ${gameId}`);
-    return;
-  }
-  const currentPlayer = room.players.find(
-    (player) => player.id === indexPlayer
-  );
-  if (!currentPlayer) {
-    console.error(`Player not found for indexPlayer: ${indexPlayer}`);
-    return;
-  }
-  const position = getRandomPosition();
-  const targetPlayer = room.players.find((player) => player.id !== indexPlayer);
-  if (!targetPlayer) {
-    console.error(`Target player not found`);
-    return;
-  }
-  const isHit = checkHit(targetPlayer.ships, position);
-  let status = isHit ? 'shot' : 'miss';
+  try {
+    const { gameId, indexPlayer } = JSON.parse(request.data);
+    const room = getRoom(gameId);
+    if (!room) {
+      console.error(`Room not found for gameId: ${gameId}`);
+      return;
+    }
+    const currentPlayer = room.players.find(
+      (player) => player.id === indexPlayer
+    );
+    if (!currentPlayer) {
+      console.error(`Player not found for indexPlayer: ${indexPlayer}`);
+      return;
+    }
+    const position = getRandomPosition();
+    const targetPlayer = room.players.find(
+      (player) => player.id !== indexPlayer
+    );
+    if (!targetPlayer) {
+      console.error(`Target player not found`);
+      return;
+    }
+    const isHit = checkHit(targetPlayer.ships, position);
+    let status = isHit ? 'shot' : 'miss';
 
-  broadcastAttackResult(room, position, status);
+    broadcastAttackResult(room, position, status);
 
-  if (checkAllShipsSunk(targetPlayer.ships)) {
-    finishGame(room, currentPlayer.id);
-    return;
+    if (checkAllShipsSunk(targetPlayer.ships)) {
+      finishGame(room, currentPlayer.id);
+      return;
+    }
+
+    if (status === 'miss') {
+      room.currentPlayerIndex =
+        (room.currentPlayerIndex + 1) % room.players.length;
+    }
+
+    broadcastTurn(room);
+  } catch (error) {
+    console.error('Failed to handle random attack:', error);
   }
-
-  broadcastTurn(room);
 }
 
 function getRandomPosition() {
@@ -205,6 +212,10 @@ function updateWinner(_: WebSocket, request: any) {
       );
     }
   });
+}
+
+function checkAllShipsSunk(ships: any[]): boolean {
+  return ships.every((ship) => ship.position.every((pos: any) => pos.hit));
 }
 
 function finishGame(room: any, winnerId: string) {
