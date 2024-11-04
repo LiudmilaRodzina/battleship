@@ -1,10 +1,7 @@
 import { WebSocket } from 'ws';
 import { activeUsers } from '../user/userHandler';
-
-interface Room {
-  roomId: string;
-  players: Array<{ name: string; id: string }>;
-}
+import { Room } from '../interfaces/interfaces';
+import { generateUniqueId } from '../utils/helpers';
 
 const rooms: Map<string, Room> = new Map();
 
@@ -13,17 +10,17 @@ export function handleRoomMessage(ws: WebSocket, message: string) {
 
   switch (request.type) {
     case 'create_room':
-      handleCreateRoom(ws, request);
+      createRoom(ws, request);
       break;
     case 'add_user_to_room':
-      handleJoinRoom(ws, request);
+      joinRoom(ws, request);
       break;
     default:
       console.error(`Unknown request type: ${request.type}`);
   }
 }
 
-function handleCreateRoom(ws: WebSocket, request: any) {
+function createRoom(ws: WebSocket, request: any) {
   const roomId = generateUniqueId();
   const playerName = activeUsers.get(ws);
 
@@ -33,7 +30,7 @@ function handleCreateRoom(ws: WebSocket, request: any) {
 
   const room: Room = {
     roomId,
-    players: [{ name: playerName, id: generateUniqueId() }],
+    players: [{ name: playerName, id: generateUniqueId(), ships: [] }],
   };
   rooms.set(roomId, room);
 
@@ -47,7 +44,7 @@ function handleCreateRoom(ws: WebSocket, request: any) {
   broadcastRoomList();
 }
 
-function handleJoinRoom(ws: WebSocket, request: any) {
+function joinRoom(ws: WebSocket, request: any) {
   const { indexRoom } = JSON.parse(request.data);
   const playerName = activeUsers.get(ws);
 
@@ -56,6 +53,7 @@ function handleJoinRoom(ws: WebSocket, request: any) {
   }
 
   const room = rooms.get(indexRoom);
+
   if (!room) {
     return;
   }
@@ -64,7 +62,7 @@ function handleJoinRoom(ws: WebSocket, request: any) {
     return;
   }
 
-  room.players.push({ name: playerName, id: generateUniqueId() });
+  room.players.push({ name: playerName, id: generateUniqueId(), ships: [] });
 
   room.players.forEach((player) => {
     const wsPlayer = [...activeUsers.keys()].find(
@@ -75,17 +73,13 @@ function handleJoinRoom(ws: WebSocket, request: any) {
       wsPlayer.send(
         JSON.stringify({
           type: 'create_game',
-          data: JSON.stringify({
-            idGame: room.roomId,
-            idPlayer: player.id,
-          }),
+          data: JSON.stringify({ idGame: room.roomId, idPlayer: player.id }),
           id: 0,
         })
       );
     }
   });
 
-  rooms.delete(indexRoom);
   broadcastRoomList();
 }
 
@@ -111,14 +105,6 @@ function broadcastRoomList() {
   });
 }
 
-function generateUniqueId(): string {
-  return Math.random().toString(36).substr(2, 9);
-}
-
 export function getRoom(roomId: string) {
   return rooms.get(roomId);
-}
-
-export function removeRoom(roomId: string) {
-  rooms.delete(roomId);
 }

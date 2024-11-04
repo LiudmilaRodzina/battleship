@@ -1,7 +1,4 @@
-interface User {
-  name: string;
-  password: string;
-}
+import { User } from '../interfaces/interfaces';
 
 const users = new Map<string, User>();
 

@@ -4,21 +4,17 @@ import { addUser, validateUser, users } from './userDatabase';
 export const activeUsers = new Map<WebSocket, string>();
 
 export function handleUserMessage(ws: WebSocket, message: string) {
-  try {
-    const request = JSON.parse(message);
-    switch (request.type) {
-      case 'reg':
-        handleRegistration(ws, request);
-        break;
-      case 'login':
-        handleLogin(ws, request);
-        break;
-      default:
-        console.error(`Unknown request type: ${request.type}`);
-    }
-  } catch (error) {
-    console.error('Error parsing message:', error);
-    ws.send(JSON.stringify({ error: 'Invalid JSON format' }));
+  const request = JSON.parse(message);
+
+  switch (request.type) {
+    case 'reg':
+      handleRegistration(ws, request);
+      break;
+    case 'login':
+      handleLogin(ws, request);
+      break;
+    default:
+      console.error(`Unknown request type: ${request.type}`);
   }
 }
 
